@@ -1,34 +1,37 @@
 ---
 description: Command to generate a PR description using code analysis
 agent: build
-model: opencode/minimax-m2.5-free
+model: opencode/deepseek-v4-flash-free
 ---
 
+Generate a PR description from code analysis.
+Optional context: `$ARGUMENTS` (free text, and/or a target branch like `base:staging` to override the base).
+
 # Execution
-1. Determine the base branch: check `git remote show origin` or fall back to `develop|dev`, then `main`.
-2. Run `git diff --stat $(git merge-base HEAD <base>)..HEAD` to get the files changed.
-3. Run `caveman-review` on `git diff $(git merge-base HEAD <base>)..HEAD` to summarize key logic changes and potential risks.
-4. Infer a concise PR title from the commit log (`git log --oneline $(git merge-base HEAD <base>)..HEAD`) and `$ARGUMENTS` if provided.
-5. Generate the PR with GitHub CLI:
+1. Determine the base branch: if `$ARGUMENTS` specifies one (e.g. `base:<branch>`), use that. Otherwise auto-detect via `git remote show origin`, else fall back to `develop|dev`, then `main`. Verify the branch exists (`git rev-parse --verify <base>`) before using it.
+2. Get changed files: `git diff --stat $(git merge-base HEAD <base>)..HEAD`.
+3. Run `caveman-review` on `git diff $(git merge-base HEAD <base>)..HEAD` for key logic changes and risks.
+4. Infer a concise title from `git log --oneline $(git merge-base HEAD <base>)..HEAD` and `$ARGUMENTS`.
+5. Create the PR:
 
 ```sh
 gh pr create --base <base> --title "<inferred title>" --body "$(cat <<'EOF'
 ## Summary
-[Summarize the intent of these changes in 2–3 sentences]
+[Intent of these changes in 2–3 sentences]
 
 ## Key Changes
-[Bullet points from caveman-review — logic changes, notable decisions, refactors]
+[caveman-review bullets — logic changes, decisions, refactors]
 
 ## Risks & Notes
-[Potential side effects, breaking changes, or areas needing extra review — from caveman-review]
+[Side effects, breaking changes, areas needing review — from caveman-review]
 
 ## Files Changed
-[Output of git diff --stat]
+[git diff --stat output]
 EOF
 )"
 ```
 
 # Notes
-- If `$ARGUMENTS` is non-empty, use it to sharpen the title and summary.
-- If the repo has a `.github/pull_request_template.md`, use that structure instead of the template above.
-- Do not open a draft PR unless the user asks.
+- Use `$ARGUMENTS` to sharpen the title and summary when provided.
+- If `.github/pull_request_template.md` exists, use its structure instead.
+- No draft PR unless the user asks.

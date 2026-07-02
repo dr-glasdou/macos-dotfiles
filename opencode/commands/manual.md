@@ -1,101 +1,66 @@
 ---
 description: Command to generate a project manual with context optimization
 agent: build
-model: opencode/minimax-m2.5-free
+model: opencode/deepseek-v4-flash-free
+variant: low
 ---
 
-# Pre-Analysis Optimization
-1. For any source file or documentation larger than 20KB, use the `caveman-compress` skill to create a high-density summary before reading.
-2. Perform the deep-dive analysis using these compressed versions to ensure no context drift occurs.
-3. If `$ARGUMENTS` is non-empty, use it to focus or scope the analysis (e.g. a specific service, module, or concern).
+Generate two project manuals from a full codebase analysis.
+Optional context: `$ARGUMENTS` (free text to focus or scope the analysis to a specific service, module, or concern).
 
-# Instructions
-Before writing anything, perform a **thorough deep-dive analysis** of the entire codebase. Completeness is more important than speed. This includes:
+# Pre-Analysis
+- For any source/doc file larger than 20KB, use `caveman-compress` for a high-density summary before reading, and analyze from those to avoid context drift.
 
-- Recursively traverse every directory and file (source, config, scripts, assets, tests, CI/CD, Docker, infra)
-- Read all relevant source files: modules, services, controllers, providers, routes, models, schemas, hooks, components, guards, interceptors, middleware, pipes, decorators, migrations, seeders, and shared utilities
-- Analyze all configuration files: environment files, build configs, dependency manifests, and deployment descriptors
-- Identify all integrations, third-party libraries, and external services
-- Map every data flow, API contract, authentication/authorization mechanism, state management pattern, and inter-module communication
-- Detect architectural patterns in use (e.g. Clean Architecture, BLoC, DDD, feature-first, barrel exports, dependency injection)
-- Do not skip any file — if uncertain whether something is relevant, read it
+# Deep-Dive Analysis
+Before writing, analyze the **entire** codebase — completeness over speed. Read every file (source, config, scripts, assets, tests, CI/CD, Docker, infra); don't skip anything uncertain. Specifically:
+- Source: modules, services, controllers, providers, routes, models, schemas, hooks, components, guards, interceptors, middleware, pipes, decorators, migrations, seeders, shared utils.
+- Config: env files, build configs, dependency manifests, deployment descriptors.
+- Map integrations, third-party libs, external services, data flows, API contracts, auth mechanisms, state management, and inter-module communication.
+- Detect architectural patterns (Clean Architecture, BLoC, DDD, feature-first, barrel exports, DI).
 
-Determine the project name from `package.json`, `pubspec.yaml`, `go.mod`, the root folder name, or any other manifest — in that order of preference.
+Determine the project name from `package.json`, `pubspec.yaml`, `go.mod`, or the root folder name (in that order). Generate the manuals only after the full scan.
 
-Only after completing the full scan, generate the two manuals below.
+# Manual 1 — Technical Reference (developers)
+For developers onboarding or returning. Sections:
+1. Overview — purpose, tech stack (Flutter / NestJS / Golang / Angular 19+), repo structure
+2. Architecture — diagram description, layer responsibilities, module boundaries, dependency direction
+3. Project structure — annotated directory tree
+4. Environment setup — prerequisites, env vars, dev commands, required secrets/service accounts
+5. Core modules & services — per module: purpose, public API, dependencies, notable details
+6. Data models & schemas — relationships, DTOs, migrations, validation
+7. API contracts — endpoints: method, path, auth, request/response shape, error codes
+8. State management — patterns, store structure, data lifecycle
+9. Auth — flows, guards, token handling, roles, permissions
+10. Inter-service communication — queues, events, WebSockets, shared libs, HTTP clients
+11. Testing — unit/integration/e2e locations, how to run, mocking conventions
+12. CI/CD & deployment — pipeline steps, env promotion, Dockerfiles, infra
+13. Patterns & conventions — naming, folders, code style, project idioms
+14. Gotchas — non-obvious decisions that would surprise a new dev
 
----
+# Manual 2 — Directive Overview (leads & stakeholders)
+For leads/PMs/stakeholders comfortable with technical terms but not reading code. Sections:
+1. What this system does — plain-language product summary
+2. Technology choices — what each tech is used for and why (if inferable)
+3. System components — services, apps, databases, queues, integrations (one paragraph each)
+4. Data flow — entry → processing → storage → response
+5. Key workflows — the 3–5 most important end-to-end flows
+6. Security & access control — who can do what, high-level auth, compliance notes
+7. Scalability & reliability — scaling, retries, error handling, availability
+8. Dependencies & third-party services
+9. Operational notes — health signals, what breaks first under load, known limits
+10. Glossary — domain terms and project-specific names
 
-## Manual 1 — Technical Reference (for developers)
+# Output Rules
+- Output path: `/docs` if it exists, else project root.
+- Write two self-contained Markdown files (no cross-references):
+  - `[projectName]-manual-technical.md` — English
+  - `[projectName]-manual-directives.md` — Spanish (formal but approachable; `usted` preferred)
+- In the directives file, keep technical terms, proper nouns, library names, and code references in English; no raw code (use pseudocode/plain descriptions).
+- Use headers, tables, and code blocks where they aid clarity.
+- Don't fabricate — mark undeterminable details as `[not found in codebase]`.
+- Aim for exhaustive coverage — these go to NotebookLM for AI-assisted consultation.
 
-Target audience: developers onboarding to the project or returning after time away.
-
-Sections to include:
-
-1. **Project overview** — purpose, tech stack (Flutter / NestJS / Golang / Angular 19+), monorepo or multi-repo structure
-2. **Architecture** — high-level diagram description, layer responsibilities, module boundaries, and dependency direction
-3. **Project structure** — annotated directory tree with the role of each major folder/file
-4. **Environment setup** — prerequisites, environment variables, local dev commands, and any required secrets or service accounts
-5. **Core modules & services** — for each major module: what it does, its public API or interface, its dependencies, and notable implementation details
-6. **Data models & schemas** — entity relationships, DTOs, database migrations, and validation rules
-7. **API contracts** — REST/gRPC/WebSocket endpoints: method, path, auth requirements, request/response shape, and error codes
-8. **State management** — patterns used (BLoC, Riverpod, NgRx, signals, etc.), store structure, and data lifecycle
-9. **Authentication & authorization** — flows, guards, token handling, roles, and permissions
-10. **Inter-service communication** — queues, events, WebSockets, shared libraries, or HTTP clients between services
-11. **Testing strategy** — unit, integration, and e2e test locations, how to run them, and any mocking conventions
-12. **CI/CD & deployment** — pipeline steps, environment promotion, Dockerfiles, and infra notes
-13. **Known patterns & conventions** — naming conventions, folder conventions, code style rules, and any project-specific idioms
-14. **Gotchas & non-obvious decisions** — anything that would surprise a new developer
-
----
-
-## Manual 2 — Directive Overview (for leads and stakeholders)
-
-Target audience: tech leads, product managers, or stakeholders who need to understand the system without reading code — but who are comfortable with technical terminology.
-
-Sections to include:
-
-1. **What this system does** — plain-language summary of the product and its main capabilities
-2. **Technology choices** — what each major technology is used for and why (brief rationale if inferable from code or config)
-3. **System components** — the main moving parts: services, apps, databases, queues, and external integrations, explained in one paragraph each
-4. **Data flow** — how data enters, moves through, and exits the system (user actions → API → processing → storage → response)
-5. **Key workflows** — the 3–5 most important end-to-end flows (e.g. user registration, order processing, background job execution)
-6. **Security & access control** — who can do what, how authentication works at a high level, and any compliance-relevant notes
-7. **Scalability & reliability** — any patterns in place for scaling, retries, error handling, or availability
-8. **Dependencies & third-party services** — external APIs, SDKs, or platforms the system relies on
-9. **Operational notes** — how to know if the system is healthy, what breaks first under load, and any known limitations
-10. **Glossary** — definitions of domain terms and project-specific names that appear in the codebase
-
----
-
-## Output Rules
-
-- Determine output path first: use `/docs` if it exists, otherwise use the project root.
-- Write two separate Markdown files:
-  - `[projectName]-manual-technical.md` — in English
-  - `[projectName]-manual-directives.md` — in Spanish (formal but approachable; `usted` preferred but not required)
-- In `manual-directives.md`, keep all technical terms, proper nouns, library names, and code references in their original English form.
-- Do not cross-reference between files — each must be self-contained and readable independently.
-- Use headers, subheaders, tables, and code blocks where they aid clarity.
-- Do not fabricate details — if something is not determinable from the code, mark it as `[not found in codebase]`.
-- Keep `manual-directives.md` free of raw code snippets; use pseudocode or plain descriptions instead.
-- Aim for exhaustive coverage over brevity — these documents will be uploaded to NotebookLM for AI-assisted consultation.
-
----
-
-## Mermaid Diagrams
-
-Include Mermaid diagrams where they add clarity. Use fenced code blocks with the `mermaid` language tag.
-
-- **Manual 1** — include freely wherever they help a developer understand structure or flow
-- **Manual 2** — limit to 1–2 high-level diagrams maximum; keep them simple and label-friendly
-- Never fabricate relationships — only diagram what is confirmed in the codebase
-- If a diagram would exceed ~20 nodes, split it into focused sub-diagrams
-- Add a one-sentence caption below every diagram explaining what it shows
-- Prefer these diagram types based on context:
-  - `flowchart TD` — request lifecycle, auth flows, background job pipelines, data processing chains
-  - `erDiagram` — database entities and their relationships (use field types if determinable)
-  - `sequenceDiagram` — inter-service communication, API call chains, WebSocket handshakes
-  - `classDiagram` — module dependencies, DI structure, or domain model hierarchy
-  - `graph LR` — high-level system architecture (services, databases, queues, external APIs)
-- Keep node labels short and unambiguous — avoid abbreviations unless they appear in the codebase itself
+# Mermaid Diagrams
+Use fenced `mermaid` blocks where they add clarity. Never diagram unconfirmed relationships. Add a one-sentence caption below each. Split diagrams over ~20 nodes. Keep labels short.
+- Manual 1: use freely. Manual 2: 1–2 high-level diagrams max.
+- Types: `flowchart TD` (lifecycles, auth, pipelines), `erDiagram` (entities/relationships), `sequenceDiagram` (inter-service, API chains, handshakes), `classDiagram` (module deps, DI, domain hierarchy), `graph LR` (system architecture).

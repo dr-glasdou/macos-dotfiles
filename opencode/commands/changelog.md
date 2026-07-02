@@ -1,18 +1,26 @@
 ---
 description: Command to generate/edit a changelog for a project
 agent: build
-model: opencode/minimax-m2.5-free
+model: opencode/deepseek-v4-flash-free
+variant: low
 ---
 
+Generate/edit a project changelog.
+Optional context: `$ARGUMENTS` (free text, and/or a version override like `version:X.Y.Z`).
+
 # Execution
-1. Determine the next version (X.Y.Z) by checking the latest git tag (`git describe --tags --abbrev=0`) and inferring a bump from the staged changes, or ask the user if ambiguous.
-2. Search for `.agents/instructions/changelog.instructions.md`. If not found, fall back to standard Keep a Changelog format.
-3. Run `git diff $(git describe --tags --abbrev=0)..HEAD` to get the diff since the last tag.
-4. Use `caveman-review` on that diff to identify notable changes.
-5. Format the changes per the instructions file under the version heading `## [X.Y.Z] - YYYY-MM-DD`.
-6. Save to `CHANGELOG.md` (or `changelog.md` if it already exists with that casing).
+1. Determine the next version (X.Y.Z): use `$ARGUMENTS` if it specifies one, else check the latest tag (`git describe --tags --abbrev=0`) and infer a bump from staged changes. Ask if ambiguous.
+2. Bump the project version to match X.Y.Z in the relevant manifest:
+   - `package.json` → set `"version": "X.Y.Z"`.
+   - `pubspec.yaml` (Flutter) → set `version: X.Y.Z+N`, always incrementing the build number `+N` by 1 or put only 1 if the first time.
+   - `go.mod` → record `X.Y.Z` for tracking purposes only (e.g. a version comment); do not change the module path.
+3. Use `.agents/instructions/changelog.instructions.md` if present; else fall back to Keep a Changelog format.
+4. Get the diff since the last tag: `git diff $(git describe --tags --abbrev=0)..HEAD`.
+5. Run `caveman-review` on that diff to identify notable changes.
+6. Format under the heading `## [X.Y.Z] - YYYY-MM-DD` per the instructions file.
+7. Save to `CHANGELOG.md` (or `changelog.md` if that casing already exists).
 
 # Git Actions
-1. Use `caveman-commit` to stage and commit `CHANGELOG.md` with: `chore(changelog): update changelog for vX.Y.Z`.
-2. Create an annotated tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
-3. Push branch and tags: `git push origin HEAD --tags`.
+1. `caveman-commit` to stage and commit with `chore(changelog): update changelog for vX.Y.Z`.
+2. Annotated tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`.
+3. Push: `git push origin HEAD --tags`.
