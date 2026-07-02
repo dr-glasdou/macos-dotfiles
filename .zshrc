@@ -3,6 +3,8 @@
 # Kiro CLI pre block. Keep at the top of this file.
 [[ -f "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.pre.zsh"
 
+
+
 zmodload zsh/zpty
 
 # =============================================================================
@@ -38,6 +40,9 @@ export SPACESHIP_RPROMPT_ADD_NEWLINE=false
 # =============================================================================
 # Environment Variables
 # =============================================================================
+
+# Portless (HTTP instead of HTTPS)
+export PORTLESS_HTTPS=0
 
 # Node.js (fnm)
 eval "$(fnm env --use-on-cd --shell zsh)"
@@ -101,6 +106,7 @@ alias gcm='git commit -m'
 alias gp='git push'
 alias gpp='git pull'
 alias gpo='git push origin'
+alias gpoht='git push origin HEAD -u --tags'
 alias gpom='git push origin main'
 alias gco='git checkout'
 alias gcb='git checkout -b'
@@ -490,6 +496,13 @@ alias fclean='flutter clean'
 alias fpub='flutter pub get'
 
 # =============================================================================
+# Claude Code Aliases (Multi-Account)
+# =============================================================================
+
+alias claude-personal='CLAUDE_CONFIG_DIR=$HOME/.claude-personal $HOME/.local/bin/claude'
+alias claude-work='CLAUDE_CONFIG_DIR=$HOME/.claude-work $HOME/.local/bin/claude'
+
+# =============================================================================
 # Terminal Integration & Completions
 # =============================================================================
 
@@ -525,12 +538,6 @@ if [ -f "${HOME}/google-cloud-sdk/completion.zsh.inc" ]; then . "${HOME}/google-
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
 
-# Added by Antigravity
-export PATH="/Users/DARamirez/.antigravity/antigravity/bin:$PATH"
-
-# Kiro CLI post block. Keep at the bottom of this file.
-[[ -f "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh"
-
 # Bitbucket API token
 export BITBUCKET_USERNAME="dr.glasdou@gmail.com"
 export BITBUCKET_API_TOKEN=$(security find-generic-password -a "$USER" -s "BITBUCKET_API_TOKEN" -w)
@@ -541,5 +548,16 @@ export PATH="$PATH:/Users/DARamirez/.lmstudio/bin"
 
 export GOPATH=$HOME/go
 
-# Added by Antigravity
-export PATH="/Users/DARamirez/.antigravity/antigravity/bin:$PATH"
+# pnpm
+export PNPM_HOME="/Users/DARamirez/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
+
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+
+
+# Kiro CLI post block. Keep at the bottom of this file.
+[[ -f "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh"
