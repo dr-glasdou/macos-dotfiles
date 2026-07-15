@@ -560,20 +560,12 @@ export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 
 # --- Claude Code via MiniMax API -----------------------------------------
-# API key injected by `op run` for the duration of this invocation only.
-# Re-prompts 1Password only if the CLI sign-in session has expired.
+# Uses the same `~/.claude-personal` config dir; only the sidecar settings
+# file swaps the auth source + base URL onto MiniMax. Avoids `op run` to keep
+# a TTY so Claude's interactive UI can start.
 claude-minimax() {
-  MINIMAX_API_KEY="op://Dev/Minimax token plan api key/credential" \
-    op run -- bash -c '
-      export ANTHROPIC_BASE_URL="https://api.minimax.io/anthropic"
-      export ANTHROPIC_AUTH_TOKEN="$MINIMAX_API_KEY"
-      export CLAUDE_CODE_AUTO_COMPACT_WINDOW="1000000"
-      export ANTHROPIC_MODEL="MiniMax-M3[1m]"
-      export ANTHROPIC_DEFAULT_SONNET_MODEL="MiniMax-M3[1m]"
-      export ANTHROPIC_DEFAULT_OPUS_MODEL="MiniMax-M3[1m]"
-      export ANTHROPIC_DEFAULT_HAIKU_MODEL="MiniMax-M3[1m]"
-      exec command claude "$@"
-    ' bash "$@"
+  command env -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL \
+    claude --settings "$HOME/.claude-personal/minimax-settings.json" "$@"
 }
 # ------------------------------------------------------------------------
 
