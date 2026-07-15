@@ -2,7 +2,6 @@
 description: Command to generate a project manual with context optimization
 agent: build
 model: opencode/deepseek-v4-flash-free
-variant: low
 ---
 
 Generate two project manuals from a full codebase analysis.

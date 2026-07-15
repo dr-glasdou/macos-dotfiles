@@ -2,7 +2,6 @@
 description: Command to generate a list of tasks based on the git commit history
 agent: build
 model: opencode/deepseek-v4-flash-free
-variant: low
 ---
 
 Summarize the current user's recent commits into a task list.

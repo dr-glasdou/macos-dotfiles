@@ -2,7 +2,6 @@
 description: Group changes into semantic commits and push
 agent: build
 model: opencode/deepseek-v4-flash-free
-variant: low
 ---
 
 Group all current changes into semantic commits and push the current branch.
