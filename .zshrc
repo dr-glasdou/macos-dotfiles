@@ -559,5 +559,23 @@ esac
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 
+# --- Claude Code via MiniMax API -----------------------------------------
+# API key injected by `op run` for the duration of this invocation only.
+# Re-prompts 1Password only if the CLI sign-in session has expired.
+claude-minimax() {
+  MINIMAX_API_KEY="op://Dev/Minimax token plan api key/credential" \
+    op run -- bash -c '
+      export ANTHROPIC_BASE_URL="https://api.minimax.io/anthropic"
+      export ANTHROPIC_AUTH_TOKEN="$MINIMAX_API_KEY"
+      export CLAUDE_CODE_AUTO_COMPACT_WINDOW="1000000"
+      export ANTHROPIC_MODEL="MiniMax-M3[1m]"
+      export ANTHROPIC_DEFAULT_SONNET_MODEL="MiniMax-M3[1m]"
+      export ANTHROPIC_DEFAULT_OPUS_MODEL="MiniMax-M3[1m]"
+      export ANTHROPIC_DEFAULT_HAIKU_MODEL="MiniMax-M3[1m]"
+      exec command claude "$@"
+    ' bash "$@"
+}
+# ------------------------------------------------------------------------
+
 # Kiro CLI post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/kiro-cli/shell/zshrc.post.zsh"
